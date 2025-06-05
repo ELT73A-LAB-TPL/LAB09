@@ -30,6 +30,21 @@ Generate code with EXTI0, ADC1, PWM and DMA
 LoadMX TIM2EXTI0ADC1PWMDMA TIM2EXTI0ADC1PWMDMA.txt N
 ```
 
+Generate code with EXTI0, ADC1, PWM, DMA and RTOS
+```bash
+LoadMX TIM2EXTI0ADC1PWMDMARTOS TIM2EXTI0ADC1PWMDMARTOS.txt N
+```
+
+To generate a script
+```bash
+export script ScriptToLoad.txt
+```
+
+Generate code with EXTI0, ADC1, PWM, DMA and RTOS
+```bash
+LoadMX ScriptToLoad ScriptToLoad.txt N
+```
+
 ## Running STM32CubeMX in command-line mode
 - https://www.st.com/resource/en/user_manual/um1718-stm32cubemx-for-stm32-configuration-and-initialization-c-code-generation-stmicroelectronics.pdf
 
