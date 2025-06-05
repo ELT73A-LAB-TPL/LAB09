@@ -23,6 +23,9 @@ git push
 git log
 ```
 
+## Grok link
+- https://x.com/i/grok/share/zDUxndSxRdtToQ4WX8rfLsgV9
+
 ## LAB steps
  
 Generate code with EXTI0, ADC1, PWM and DMA
