@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cmsis_os.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+/* Event flag definitions */
+#define BUTTON_FLAG (1UL << 0) // Bit 0 for button press
+#define PWM_FLAG (1UL << 1)    // Bit 1 for PWM update
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,7 +64,14 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim10;
 
 /* USER CODE BEGIN EV */
-
+extern osThreadId_t LEDTaskHandle;
+extern osThreadId_t AN1TaskHandle;
+extern osThreadId_t AN2TaskHandle;
+extern osMessageQueueId_t AN1QueueHandle;
+extern osMessageQueueId_t AN2QueueHandle;
+extern osMutexId_t pwmMutexHandle;
+extern osSemaphoreId_t buttonSemaphoreHandle;
+extern osEventFlagsId_t EventFlagsHandle;
 /* USER CODE END EV */
 
 /******************************************************************************/
