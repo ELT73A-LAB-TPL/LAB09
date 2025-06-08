@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,51 +49,49 @@ TIM_HandleTypeDef htim2;
 /* Definitions for LEDTask */
 osThreadId_t LEDTaskHandle;
 const osThreadAttr_t LEDTask_attributes = {
-  .name = "LEDTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "LEDTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for AN1Task */
 osThreadId_t AN1TaskHandle;
 const osThreadAttr_t AN1Task_attributes = {
-  .name = "AN1Task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "AN1Task",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for AN2Task */
 osThreadId_t AN2TaskHandle;
 const osThreadAttr_t AN2Task_attributes = {
-  .name = "AN2Task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "AN2Task",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for AN1Queue */
 osMessageQueueId_t AN1QueueHandle;
 const osMessageQueueAttr_t AN1Queue_attributes = {
-  .name = "AN1Queue"
-};
+    .name = "AN1Queue"};
 /* Definitions for AN2Queue */
 osMessageQueueId_t AN2QueueHandle;
 const osMessageQueueAttr_t AN2Queue_attributes = {
-  .name = "AN2Queue"
-};
+    .name = "AN2Queue"};
 /* Definitions for pwmMutex */
 osMutexId_t pwmMutexHandle;
 const osMutexAttr_t pwmMutex_attributes = {
-  .name = "pwmMutex"
-};
+    .name = "pwmMutex"};
 /* Definitions for buttonSemaphore */
 osSemaphoreId_t buttonSemaphoreHandle;
 const osSemaphoreAttr_t buttonSemaphore_attributes = {
-  .name = "buttonSemaphore"
-};
+    .name = "buttonSemaphore"};
 /* Definitions for EventFlags */
 osEventFlagsId_t EventFlagsHandle;
 const osEventFlagsAttr_t EventFlags_attributes = {
-  .name = "EventFlags"
-};
+    .name = "EventFlags"};
 /* USER CODE BEGIN PV */
-
+bool BLUELED = 0;
+uint32_t AD_RES_BUFFER[2];
+uint16_t ADC1IN1, ADC1IN2;
+float voltage1, voltage2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,13 +110,15 @@ void StartAN2Task(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+/* Event flag definitions */
+#define BUTTON_FLAG  (1UL << 0) // Bit 0 for button press
+#define PWM_FLAG   (1UL << 1) // Bit 1 for pwm update
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -148,7 +148,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -175,10 +175,10 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of AN1Queue */
-  AN1QueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &AN1Queue_attributes);
+  AN1QueueHandle = osMessageQueueNew(16, sizeof(uint16_t), &AN1Queue_attributes);
 
   /* creation of AN2Queue */
-  AN2QueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &AN2Queue_attributes);
+  AN2QueueHandle = osMessageQueueNew(16, sizeof(uint16_t), &AN2Queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -222,22 +222,22 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -248,9 +248,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -263,10 +262,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief ADC1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief ADC1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_ADC1_Init(void)
 {
 
@@ -281,7 +280,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 1 */
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
+   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
@@ -300,7 +299,7 @@ static void MX_ADC1_Init(void)
   }
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
+   */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
@@ -310,7 +309,7 @@ static void MX_ADC1_Init(void)
   }
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
+   */
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = 2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -320,14 +319,13 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
-
 }
 
 /**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM2_Init(void)
 {
 
@@ -379,12 +377,11 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
-
 }
 
 /**
-  * Enable DMA controller clock
-  */
+ * Enable DMA controller clock
+ */
 static void MX_DMA_Init(void)
 {
 
@@ -395,14 +392,13 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -446,17 +442,41 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN Header_StartLEDTask */
 /**
-  * @brief  Function implementing the LEDTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+ * @brief  Function implementing the LEDTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartLEDTask */
 void StartLEDTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
+    // Verify if the semaphore is available
+    if (osSemaphoreAcquire(buttonSemaphoreHandle, 0) == osOK)
+    {
+      // Toggle the BLUELED state
+      BLUELED = !BLUELED;
+      // Release the semaphore
+      osSemaphoreRelease(buttonSemaphoreHandle);
+    }
+    // Check if the event flag for BUTTON_FLAG is set
+    uint32_t flags = osEventFlagsWait(EventFlagsHandle, BUTTON_FLAG, osFlagsWaitAny, 0);
+    if ((flags & BUTTON_FLAG) != 0)
+    {
+      // Clear the event flag
+      osEventFlagsClear(EventFlagsHandle, BUTTON_FLAG);
+      // Toggle the BLUELED state
+      BLUELED = !BLUELED;
+    }
+    // Control the BLUE LED based on the BLUELED variable
+    // Use GPIOC, Pin 13 for the BLUE LED
+    if (BLUELED)
+      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // LED ON
+    else
+      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET); // LED OFF
+
     osDelay(1);
   }
   /* USER CODE END 5 */
@@ -464,17 +484,32 @@ void StartLEDTask(void *argument)
 
 /* USER CODE BEGIN Header_StartAN1Task */
 /**
-* @brief Function implementing the AN1Task thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the AN1Task thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartAN1Task */
 void StartAN1Task(void *argument)
 {
   /* USER CODE BEGIN StartAN1Task */
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
+    // Get ADC values from queue
+    if (osMessageQueueGet(AN1QueueHandle, &ADC1IN1, NULL, 0) == osOK)
+    {
+      // Convert ADC value to voltage
+      voltage1 = (ADC1IN1 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
+      // Process the voltage value as needed
+    }
+
+    // Get mutex for PWM control
+    if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+    {
+      // Set PWM duty cycle based on ADC value
+      TIM2->CCR1 = ADC1IN1; // Assuming TIM2 Channel 1 is used for PWM
+      osMutexRelease(pwmMutexHandle);
+    }
     osDelay(1);
   }
   /* USER CODE END StartAN1Task */
@@ -482,30 +517,45 @@ void StartAN1Task(void *argument)
 
 /* USER CODE BEGIN Header_StartAN2Task */
 /**
-* @brief Function implementing the AN2Task thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the AN2Task thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartAN2Task */
 void StartAN2Task(void *argument)
 {
   /* USER CODE BEGIN StartAN2Task */
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
+    // Get ADC values from queue
+    if (osMessageQueueGet(AN2QueueHandle, &ADC1IN2, NULL, 0) == osOK)
+    {
+      // Convert ADC value to voltage
+      voltage2 = (ADC1IN2 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
+      // Process the voltage value as needed
+    }
+
+    // Get mutex for PWM control
+    if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+    {
+      // Set PWM duty cycle based on ADC value
+      TIM2->CCR1 = ADC1IN2; // Assuming TIM2 Channel 1 is used for PWM
+      osMutexRelease(pwmMutexHandle);
+    }
     osDelay(1);
   }
   /* USER CODE END StartAN2Task */
 }
 
 /**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM10 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM10 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
@@ -521,9 +571,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -535,14 +585,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
