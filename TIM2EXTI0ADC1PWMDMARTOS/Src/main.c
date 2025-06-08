@@ -43,7 +43,6 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-
 TIM_HandleTypeDef htim2;
 
 /* Definitions for LEDTask */
@@ -87,8 +86,11 @@ const osSemaphoreAttr_t buttonSemaphore_attributes = {
 osEventFlagsId_t EventFlagsHandle;
 const osEventFlagsAttr_t EventFlags_attributes = {
     .name = "EventFlags"};
+
 /* USER CODE BEGIN PV */
 bool BLUELED = 0;
+bool AN1PWM = 0; // AN1 updates PWM compare
+bool AN2PWM = 0; // AN2 updates PWM compare
 uint32_t AD_RES_BUFFER[2];
 uint16_t ADC1IN1, ADC1IN2;
 float voltage1, voltage2;
@@ -111,8 +113,8 @@ void StartAN2Task(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /* Event flag definitions */
-#define BUTTON_FLAG  (1UL << 0) // Bit 0 for button press
-#define PWM_FLAG   (1UL << 1) // Bit 1 for pwm update
+#define BUTTON_FLAG (1UL << 0) // Bit 0 for button press
+#define PWM_FLAG (1UL << 1)    // Bit 1 for pwm update
 /* USER CODE END 0 */
 
 /**
@@ -453,14 +455,6 @@ void StartLEDTask(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    // Verify if the semaphore is available
-    if (osSemaphoreAcquire(buttonSemaphoreHandle, 0) == osOK)
-    {
-      // Toggle the BLUELED state
-      BLUELED = !BLUELED;
-      // Release the semaphore
-      osSemaphoreRelease(buttonSemaphoreHandle);
-    }
     // Check if the event flag for BUTTON_FLAG is set
     uint32_t flags = osEventFlagsWait(EventFlagsHandle, BUTTON_FLAG, osFlagsWaitAny, 0);
     if ((flags & BUTTON_FLAG) != 0)
@@ -471,12 +465,25 @@ void StartLEDTask(void *argument)
       BLUELED = !BLUELED;
     }
     // Control the BLUE LED based on the BLUELED variable
-    // Use GPIOC, Pin 13 for the BLUE LED
-    if (BLUELED)
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // LED ON
-    else
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET); // LED OFF
-
+    // Verify if the semaphore is available
+    if (osSemaphoreAcquire(buttonSemaphoreHandle, 0) == osOK)
+    {
+      // Toggle the BLUELED state
+      if (BLUELED)
+      {
+        AN1PWM = 1;                                            // Set flag to update PWM with AN1 data
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // LED ON
+      }
+      else
+      {
+        AN1PWM = 0;                                          // Set flag to update PWM with AN2 data
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET); // LED OFF
+      }
+      // Release the semaphore
+      // This ensures that the semaphore is released only after the LED state is toggled
+      // This prevents the semaphore from being released multiple times
+      osSemaphoreRelease(buttonSemaphoreHandle);
+    }
     osDelay(1);
   }
   /* USER CODE END 5 */
@@ -492,22 +499,28 @@ void StartLEDTask(void *argument)
 void StartAN1Task(void *argument)
 {
   /* USER CODE BEGIN StartAN1Task */
+  uint16_t ADC1DATA1 = 0;
   /* Infinite loop */
   for (;;)
   {
     // Get ADC values from queue
-    if (osMessageQueueGet(AN1QueueHandle, &ADC1IN1, NULL, 0) == osOK)
+    if (osMessageQueueGet(AN1QueueHandle, &ADC1DATA1, NULL, 0) == osOK)
     {
       // Convert ADC value to voltage
-      voltage1 = (ADC1IN1 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
+      voltage1 = (ADC1DATA1 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
       // Process the voltage value as needed
     }
 
-    // Get mutex for PWM control
-    if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+    if (AN1PWM) // Only update PWM if AN1PWM is set
     {
-      // Set PWM duty cycle based on ADC value
-      TIM2->CCR1 = ADC1IN1; // Assuming TIM2 Channel 1 is used for PWM
+      // Get mutex for PWM control
+      if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+      {
+        // Set PWM duty cycle based on ADC value
+        ADC1IN1 = ADC1DATA1;    // Store ADC value for AN1
+        TIM2->CCR1 = ADC1DATA1; // Assuming TIM2 Channel 1 is used for PWM
+      }
+
       osMutexRelease(pwmMutexHandle);
     }
     osDelay(1);
@@ -525,23 +538,28 @@ void StartAN1Task(void *argument)
 void StartAN2Task(void *argument)
 {
   /* USER CODE BEGIN StartAN2Task */
+  uint16_t ADC1DATA2 = 0;
   /* Infinite loop */
   for (;;)
   {
     // Get ADC values from queue
-    if (osMessageQueueGet(AN2QueueHandle, &ADC1IN2, NULL, 0) == osOK)
+    if (osMessageQueueGet(AN2QueueHandle, &ADC1DATA2, NULL, 0) == osOK)
     {
       // Convert ADC value to voltage
-      voltage2 = (ADC1IN2 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
+      voltage2 = (ADC1DATA2 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
       // Process the voltage value as needed
     }
 
-    // Get mutex for PWM control
-    if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+    if (AN2PWM) // Only update PWM if AN2PWM is set
     {
-      // Set PWM duty cycle based on ADC value
-      TIM2->CCR1 = ADC1IN2; // Assuming TIM2 Channel 1 is used for PWM
-      osMutexRelease(pwmMutexHandle);
+      // Set flag to update PWM with AN2 data
+      // Get mutex for PWM control
+      if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+      {
+        // Set PWM duty cycle based on ADC value
+        TIM2->CCR1 = ADC1DATA2; // Assuming TIM2 Channel 1 is used for PWM
+        osMutexRelease(pwmMutexHandle);
+      }
     }
     osDelay(1);
   }
