@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cmsis_os.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,6 +73,11 @@ extern osMessageQueueId_t AN2QueueHandle;
 extern osMutexId_t pwmMutexHandle;
 extern osSemaphoreId_t buttonSemaphoreHandle;
 extern osEventFlagsId_t EventFlagsHandle;
+
+extern bool BLUELED;
+extern uint32_t AD_RES_BUFFER[2];
+extern uint16_t ADC1IN1,ADC1IN2;
+extern float voltage1,voltage2;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -178,11 +184,18 @@ void DebugMon_Handler(void)
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-
+//BLUELED = !BLUELED;
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(User_KEY_EXTI0_Pin);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
-
+  /* Set BUTTON_FLAG */
+  osEventFlagsSet(EventFlagsHandle, BUTTON_FLAG);
+  /* Signal task with semaphore */
+  osStatus_t status = osSemaphoreRelease(buttonSemaphoreHandle);
+  if (status != osOK)
+  {
+    // Handle error (e.g., semaphore already given)
+  }
   /* USER CODE END EXTI0_IRQn 1 */
 }
 
@@ -220,7 +233,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-
+HAL_ADC_Start_DMA(&hadc1, AD_RES_BUFFER, 2);
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
@@ -243,5 +256,19 @@ void DMA2_Stream0_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+// https://deepbluembedded.com/stm32-adc-multi-channel-scan-continuous-mode-dma-poll-examples/
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  // Conversion Complete & DMA Transfer Complete As Well
+  ADC1IN1 = AD_RES_BUFFER[0];
+  ADC1IN2 = AD_RES_BUFFER[1];
 
+  // Queue ADC values
+  osMessageQueuePut(AN1QueueHandle, &ADC1IN1, 0, 0);
+  osMessageQueuePut(AN2QueueHandle, &ADC1IN2, 0, 0);
+
+ // voltage1 = (ADC1IN1 * 3.3) / 4095;
+ // voltage2 = (ADC1IN2 * 3.3) / 4095;
+ // TIM2->CCR1 = ADC1IN1;  // PWM CH1
+}
 /* USER CODE END 1 */
