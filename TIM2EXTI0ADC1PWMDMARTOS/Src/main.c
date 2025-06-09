@@ -508,22 +508,17 @@ void StartAN1Task(void *argument)
     // Get ADC values from queue
     if (osMessageQueueGet(AN1QueueHandle, &ADC1DATA1, NULL, 0) == osOK)
     {
-      // Convert ADC value to voltage
       voltage1 = (ADC1DATA1 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
       // Process the voltage value as needed
-    }
-
-    if (AN1PWM) // Only update PWM if AN1PWM is set
-    {
-      // Get mutex for PWM control
-      if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+      if (AN1PWM) // Only update PWM if AN1PWM is set
       {
-        // Set PWM duty cycle based on ADC value
-        ADC1IN1 = ADC1DATA1;    // Store ADC value for AN1
-        TIM2->CCR1 = ADC1DATA1; // Assuming TIM2 Channel 1 is used for PWM
+        // Get mutex for PWM control
+        if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+        {
+          TIM2->CCR1 = ADC1DATA1; // Assuming TIM2 Channel 1 is used for PWM
+          osMutexRelease(pwmMutexHandle);
+        }
       }
-
-      osMutexRelease(pwmMutexHandle);
     }
     osDelay(1);
   }
@@ -547,20 +542,18 @@ void StartAN2Task(void *argument)
     // Get ADC values from queue
     if (osMessageQueueGet(AN2QueueHandle, &ADC1DATA2, NULL, 0) == osOK)
     {
-      // Convert ADC value to voltage
       voltage2 = (ADC1DATA2 * 3.3f) / 4095.0f; // Assuming 12-bit ADC and 3.3V reference
-      // Process the voltage value as needed
-    }
-
-    if (AN2PWM) // Only update PWM if AN2PWM is set
-    {
-      // Set flag to update PWM with AN2 data
-      // Get mutex for PWM control
-      if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+      if (AN2PWM)                              // Only update PWM if AN2PWM is set
       {
-        // Set PWM duty cycle based on ADC value
-        TIM2->CCR1 = ADC1DATA2; // Assuming TIM2 Channel 1 is used for PWM
-        osMutexRelease(pwmMutexHandle);
+        // Set flag to update PWM with AN2 data
+        // Get mutex for PWM control
+        if (osMutexAcquire(pwmMutexHandle, osWaitForever) == osOK)
+        {
+          // Set PWM duty cycle based on ADC value
+          TIM2->CCR1 = ADC1DATA2; // Assuming TIM2 Channel 1 is used for PWM
+          osMutexRelease(pwmMutexHandle);
+        }
+        // set pwm event flag
       }
     }
     osDelay(1);
