@@ -190,12 +190,6 @@ void EXTI0_IRQHandler(void)
   /* USER CODE BEGIN EXTI0_IRQn 1 */
   /* Set BUTTON_FLAG */
   osEventFlagsSet(EventFlagsHandle, BUTTON_FLAG);
-  /* Signal task with semaphore */
-  osStatus_t status = osSemaphoreRelease(buttonSemaphoreHandle);
-  if (status != osOK)
-  {
-    // Handle error (e.g., semaphore already given)
-  }
   /* USER CODE END EXTI0_IRQn 1 */
 }
 
