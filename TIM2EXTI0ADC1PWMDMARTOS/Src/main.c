@@ -472,7 +472,7 @@ void StartLEDTask(void *argument)
       if (BLUELED)
       {
         AN1PWM = 1;                                            // Set flag to update PWM with AN1 data
-        AN2PWM = 0;                                          // Reset flag for AN2 PWM update
+        AN2PWM = 0;                                            // Reset flag for AN2 PWM update
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // LED ON
       }
       else
