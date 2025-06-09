@@ -23,9 +23,6 @@ git push
 git log
 ```
 
-## Grok link
-- https://x.com/i/grok/share/zDUxndSxRdtToQ4WX8rfLsgV9
-
 ## LAB steps
  
 Generate code with EXTI0, ADC1, PWM, DMA and RTOS
@@ -106,4 +103,5 @@ LoadMX ProjectName ScriptName.txt Y
 - https://www.st.com/en/development-tools/stm32cubeclt.html
 - https://www.st.com/en/development-tools/stm32cubeprog.html
 
-
+## FreeRTOS with CMSIS-RTOS V2 on STM32
+- https://x.com/i/grok/share/zDUxndSxRdtToQ4WX8rfLsgV9
