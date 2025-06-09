@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    stm32f4xx_it.c
-  * @brief   Interrupt Service Routines.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    stm32f4xx_it.c
+ * @brief   Interrupt Service Routines.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -76,31 +76,31 @@ extern osEventFlagsId_t EventFlagsHandle;
 
 extern bool BLUELED;
 extern uint32_t AD_RES_BUFFER[2];
-extern uint16_t ADC1IN1,ADC1IN2;
-extern float voltage1,voltage2;
+extern uint16_t ADC1IN1, ADC1IN2;
+extern float voltage1, voltage2;
 /* USER CODE END EV */
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
-  * @brief This function handles Non maskable interrupt.
-  */
+ * @brief This function handles Non maskable interrupt.
+ */
 void NMI_Handler(void)
 {
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-   while (1)
+  while (1)
   {
   }
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
-  * @brief This function handles Hard fault interrupt.
-  */
+ * @brief This function handles Hard fault interrupt.
+ */
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
@@ -114,8 +114,8 @@ void HardFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Memory management fault.
-  */
+ * @brief This function handles Memory management fault.
+ */
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
@@ -129,8 +129,8 @@ void MemManage_Handler(void)
 }
 
 /**
-  * @brief This function handles Pre-fetch fault, memory access fault.
-  */
+ * @brief This function handles Pre-fetch fault, memory access fault.
+ */
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
@@ -144,8 +144,8 @@ void BusFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
+ * @brief This function handles Undefined instruction or illegal state.
+ */
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
@@ -159,8 +159,8 @@ void UsageFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Debug monitor.
-  */
+ * @brief This function handles Debug monitor.
+ */
 void DebugMon_Handler(void)
 {
   /* USER CODE BEGIN DebugMonitor_IRQn 0 */
@@ -179,12 +179,11 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles EXTI line0 interrupt.
-  */
+ * @brief This function handles EXTI line0 interrupt.
+ */
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-//BLUELED = !BLUELED;
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(User_KEY_EXTI0_Pin);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
@@ -194,8 +193,8 @@ void EXTI0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles ADC1 global interrupt.
-  */
+ * @brief This function handles ADC1 global interrupt.
+ */
 void ADC_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC_IRQn 0 */
@@ -208,8 +207,8 @@ void ADC_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
-  */
+ * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
+ */
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
@@ -222,12 +221,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM2 global interrupt.
-  */
+ * @brief This function handles TIM2 global interrupt.
+ */
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-HAL_ADC_Start_DMA(&hadc1, AD_RES_BUFFER, 2);
+  HAL_ADC_Start_DMA(&hadc1, AD_RES_BUFFER, 2);
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
@@ -236,8 +235,8 @@ HAL_ADC_Start_DMA(&hadc1, AD_RES_BUFFER, 2);
 }
 
 /**
-  * @brief This function handles DMA2 stream0 global interrupt.
-  */
+ * @brief This function handles DMA2 stream0 global interrupt.
+ */
 void DMA2_Stream0_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
@@ -261,8 +260,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   osMessageQueuePut(AN1QueueHandle, &ADC1IN1, 0, 0);
   osMessageQueuePut(AN2QueueHandle, &ADC1IN2, 0, 0);
 
- // voltage1 = (ADC1IN1 * 3.3) / 4095;
- // voltage2 = (ADC1IN2 * 3.3) / 4095;
- // TIM2->CCR1 = ADC1IN1;  // PWM CH1
+  // voltage1 = (ADC1IN1 * 3.3) / 4095;
+  // voltage2 = (ADC1IN2 * 3.3) / 4095;
+  // TIM2->CCR1 = ADC1IN1;  // PWM CH1
 }
 /* USER CODE END 1 */
