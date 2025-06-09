@@ -28,11 +28,6 @@ git log
 
 ## LAB steps
  
-Generate code with EXTI0, ADC1, PWM and DMA
-```bash
-LoadMX TIM2EXTI0ADC1PWMDMA TIM2EXTI0ADC1PWMDMA.txt N
-```
-
 Generate code with EXTI0, ADC1, PWM, DMA and RTOS
 ```bash
 LoadMX TIM2EXTI0ADC1PWMDMARTOS TIM2EXTI0ADC1PWMDMARTOS.txt N
@@ -41,11 +36,6 @@ LoadMX TIM2EXTI0ADC1PWMDMARTOS TIM2EXTI0ADC1PWMDMARTOS.txt N
 To generate a script
 ```bash
 export script ScriptToLoad.txt
-```
-
-Generate code with EXTI0, ADC1, PWM, DMA and RTOS
-```bash
-LoadMX ScriptToLoad ScriptToLoad.txt N
 ```
 
 ## Running STM32CubeMX in command-line mode
