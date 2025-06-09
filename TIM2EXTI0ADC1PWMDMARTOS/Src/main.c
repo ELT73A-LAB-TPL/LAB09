@@ -456,7 +456,7 @@ void StartLEDTask(void *argument)
   for (;;)
   {
     // Check if the event flag for BUTTON_FLAG is set
-    uint32_t flags = osEventFlagsWait(EventFlagsHandle, BUTTON_FLAG, osFlagsWaitAny, 0);
+    uint32_t flags = osEventFlagsWait(EventFlagsHandle, BUTTON_FLAG, osFlagsWaitAny, osWaitForever);
     if ((flags & BUTTON_FLAG) != 0)
     {
       // Clear the event flag
@@ -472,11 +472,13 @@ void StartLEDTask(void *argument)
       if (BLUELED)
       {
         AN1PWM = 1;                                            // Set flag to update PWM with AN1 data
+        AN2PWM = 0;                                          // Reset flag for AN2 PWM update
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // LED ON
       }
       else
       {
-        AN1PWM = 0;                                          // Set flag to update PWM with AN2 data
+        AN2PWM = 1;                                          // Set flag to update PWM with AN2 data
+        AN1PWM = 0;                                          // Reset flag for AN1 PWM update
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET); // LED OFF
       }
       // Release the semaphore
