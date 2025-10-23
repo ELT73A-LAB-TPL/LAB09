@@ -1,4 +1,4 @@
-# LAB08 template for ELT73A course 
+# LAB09 template for ELT73A course 
 ## Git commands
 How to config git
 ```bash
